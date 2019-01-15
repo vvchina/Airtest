@@ -6,12 +6,13 @@ import os
 import time
 
 from six.moves.urllib.parse import parse_qsl, urlparse
-
-from airtest.core.cv import Template, loop_find, try_log_screen
-from airtest.core.error import TargetNotFoundError
+#from airtest.core.cv import Template
+#, loop_find, try_log_screen
+#from airtest.core.error import TargetNotFoundError
 from airtest.core.helper import (G, delay_after_operation, import_device_cls,
                                  logwrap, set_logdir, using, log)
-from airtest.core.settings import Settings as ST
+#from airtest.core.settings import Settings as ST
+from airtest.utils.transform import TargetPos
 
 
 """
@@ -28,16 +29,7 @@ def init_device(platform="Android", uuid=None, **kwargs):
     :param kwargs: Optional platform specific keyword args, e.g. `cap_method=JAVACAP` for Android
     :return: device instance
     """
-    cls = import_device_cls(platform)
-    dev = cls(uuid, **kwargs)
-    for index, instance in enumerate(G.DEVICE_LIST):
-        if dev.uuid == instance.uuid:
-            G.LOGGING.warn("Device:%s updated %s -> %s" % (dev.uuid, instance, dev))
-            G.DEVICE_LIST[index] = dev
-            break
-    else:
-        G.add_device(dev)
-    return dev
+    writeScript("init_device")
 
 
 def connect_device(uri):
@@ -424,5 +416,25 @@ def assert_not_equal(first, second, msg=""):
     """
 
 
-def writeScript(self,str):
+def writeScript(str):
         print(str)
+
+class Template(object):
+    """
+    picture as touch/swipe/wait/exists target and extra info for cv match
+    filename: pic filename
+    target_pos: ret which pos in the pic
+    record_pos: pos in screen when recording
+    resolution: screen resolution when recording
+    rgb: 识别结果是否使用rgb三通道进行校验.
+    """
+
+    def __init__(self, filename, threshold=None, target_pos=TargetPos.MID, record_pos=None, resolution=(), rgb=False):
+        self.filename = filename
+        self._filepath = None
+        self.threshold = threshold or ST.THRESHOLD
+        self.target_pos = target_pos
+        self.record_pos = record_pos
+        self.resolution = resolution
+        self.rgb = rgb
+
