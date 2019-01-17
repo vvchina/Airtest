@@ -1,3 +1,3 @@
 #!/bin/sh
 
-export PYTHONPATH=../lib;  python test_blackjack.py
+export PYTHONPATH=../../build/lib/;  python test_blackjack_lua.py
