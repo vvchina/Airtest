@@ -11,7 +11,7 @@ from six.moves.urllib.parse import parse_qsl, urlparse
 #from airtest.core.error import TargetNotFoundError
 from airtest.core.helper import (G, delay_after_operation, import_device_cls,
                                  logwrap, set_logdir, using, log)
-#from airtest.core.settings import Settings as ST
+from airtest.core.settings import Settings as ST
 from airtest.utils.transform import TargetPos
 
 
@@ -119,7 +119,10 @@ def start_app(package, activity=None):
     :return: None
     :platforms: Android, iOS
     """
-    writeScript("start_app( '%s','%s')" % package, activity)
+    if activity == None :
+        writeScript("start_app( '%s')" % package)
+    else :
+        writeScript("start_app( '%s','%s')" % (package, activity))
 
 
 @logwrap
@@ -219,16 +222,14 @@ def touch(v, times=1, **kwargs):
     :return: finial position to be clicked
     :platforms: Android, Windows, iOS
     """
-    record_x, record_y = v.record_pos
-    res_x, res_y = v.resolution
-    writeScript("touch({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}},%d)" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y,times)
+    writeScript("touch("+templateStr(v)+",%d)" % times)
 
 click = touch  # click is alias of touch
 
 
 @logwrap
 def double_click(v):
-    writeScript("double_click({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}})" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y)
+    writeScript("double_click("+templateStr(v)+")")
 
 
 
@@ -254,7 +255,7 @@ def swipe(v1, v2=None, vector=None, **kwargs):
     :platforms: Android, Windows, iOS
     """
     v_x,v_y=vector
-    writeScript("swipe({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}},{%f,%f})" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y,v_x,v_y)
+    writeScript("swipe("+templateStr(v)+",{%f,%f})" % vector)
 
 
 
@@ -306,7 +307,7 @@ def sleep(secs=1.0):
     :return: None
     :platforms: Android, Windows, iOS
     """
-    writeScript("msleep(%d)" % secs*1000)
+    writeScript("msleep(%d)" % (secs*1000))
 
 
 @logwrap
@@ -323,7 +324,8 @@ def wait(v, timeout=None, interval=0.5, intervalfunc=None):
     :platforms: Android, Windows, iOS
     """
     timeout = timeout or ST.FIND_TIMEOUT
-    writeScript("wait({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}},%d,%d)" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y,timeout*1000,interval*1000)
+    writeScript("wait("+templateStr(v)+",%d,%d)" % (timeout*1000,interval*1000))
+    return v
 
 
 
@@ -336,7 +338,7 @@ def exists(v):
     :return: False if target is not found, otherwise returns the coordinates of the target
     :platforms: Android, Windows, iOS
     """
-    writeScript("exists({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}},%d)" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y,ST.FIND_TIMEOUT_TMP*1000)
+    writeScript("exists("+templateStr(v)+",%d)" % ST.FIND_TIMEOUT_TMP*1000)
 
 
 
@@ -349,7 +351,7 @@ def find_all(v):
     :return: list of coordinates, [(x, y), (x1, y1), ...]
     :platforms: Android, Windows, iOS
     """
-    writeScript("find_all({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}})" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y)
+    writeScript("find_all("+templateStr(v)+")" )
 
 
 
@@ -369,7 +371,7 @@ def assert_exists(v, msg=""):
     :return: coordinates of the target
     :platforms: Android, Windows, iOS
     """
-    writeScript("assert_exists({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}},%d,%s)" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y,ST.FIND_TIMEOUT_TMP*1000,msg)
+    writeScript("assert_exists("+templateStr(v)+",%d,'%s')" % (ST.FIND_TIMEOUT_TMP*1000,msg))
 
 
 
@@ -384,7 +386,7 @@ def assert_not_exists(v, msg=""):
     :return: None.
     :platforms: Android, Windows, iOS
     """
-    writeScript("assert_not_exists({filename='%s',threshold=%f, target_pos=%d,rgb=%s,record_pos={%f,%f),resolution={%d,%d}},%d,%s)" % v.filename,v.threshold,v.target_pos,v.rgb,record_x,record_y,res_x,res_y,ST.FIND_TIMEOUT_TMP*1000,msg)
+    writeScript("assert_not_exists("+templateStr(v)+",%d,'%s')" % ST.FIND_TIMEOUT_TMP*1000,msg)
 
 
 
@@ -417,7 +419,24 @@ def assert_not_equal(first, second, msg=""):
 
 
 def writeScript(str):
-        print(str)
+    print(str)
+
+def templateStr(v):
+    record_x, record_y = v.record_pos
+    res_x, res_y = v.resolution
+    res =  "{filename='%s',record_pos={%f,%f},resolution={%d,%d}" % (v.filename,record_x , record_y,res_x,res_y)
+    if v.target_pos != None :
+        res +=", target_pos=%d"%v.target_pos
+
+    if v.threshold != None :
+        res += ",threshold=%f"%v.threshold
+
+    if v.rgb != None :
+        res += ",rgb=%s"%v.rgb
+
+    res+="}"
+
+    return res
 
 class Template(object):
     """
