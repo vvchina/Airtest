@@ -16,7 +16,7 @@ from cal_confidence import cal_rgb_confidence
 def find_template(im_source, im_search, threshold=0.8, rgb=False):
     """函数功能：找到最优结果."""
     # 第一步：校验图像输入
-#    check_source_larger_than_search(im_source, im_search)
+    check_source_larger_than_search(im_source, im_search)
     # 第二步：计算模板匹配的结果矩阵res
     res = _get_template_result_matrix(im_source, im_search)
     # 第三步：依次获取匹配结果
