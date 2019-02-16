@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from template import find_template
+from sift import find_sift
 import cv2
 
 def image_show(img) :
@@ -10,10 +11,18 @@ def image_show(img) :
     return
 
 if __name__ == '__main__':
-    res=find_template(cv2.imread("test.jpg"),cv2.imread("test1.jpg"))
-    print(res)
-    img=cv2.imread("test.jpg")
-    cv2.rectangle(img, res['rectangle'][0], res['rectangle'][2], (0, 255, 0), 2)
-    image_show(img)
+    method="sift"
+    if method == "tpl":      
+        res=find_template(cv2.imread("test.jpg"),cv2.imread("test1.jpg"))
+        print(res)
+        img=cv2.imread("test.jpg")
+        cv2.rectangle(img, res['rectangle'][0], res['rectangle'][2], (0, 255, 0), 2)
+        image_show(img)
+    elif method == "sift":
+        res=find_sift(cv2.imread("test.jpg"),cv2.imread("test1.jpg"))
+        print(res)
+        img=cv2.imread("test.jpg")
+        cv2.rectangle(img, res['rectangle'][0], res['rectangle'][2], (0, 255, 0), 2)
+        image_show(img)
 
 

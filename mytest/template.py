@@ -30,38 +30,38 @@ def find_template(im_source, im_search, threshold=0.8, rgb=False):
     return best_match if confidence >= threshold else None
 
 
-#def find_all_template(im_source, im_search, threshold=0.8, rgb=False, max_count=10):
+def find_all_template(im_source, im_search, threshold=0.8, rgb=False, max_count=10):
     """根据输入图片和参数设置,返回所有的图像识别结果."""
     # 第一步：校验图像输入
-#    check_source_larger_than_search(im_source, im_search)
+    check_source_larger_than_search(im_source, im_search)
 
     # 第二步：计算模板匹配的结果矩阵res
-#    res = _get_template_result_matrix(im_source, im_search)
+    res = _get_template_result_matrix(im_source, im_search)
 
     # 第三步：依次获取匹配结果
-#    result = []
-#    h, w = im_search.shape[:2]
+    result = []
+    h, w = im_search.shape[:2]
 
-#    while True:
+    while True:
         # 本次循环中,取出当前结果矩阵中的最优值
-#        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
         # 求取可信度:
-#        confidence = _get_confidence_from_matrix(im_source, im_search, max_loc, max_val, w, h, rgb)
+        confidence = _get_confidence_from_matrix(im_source, im_search, max_loc, max_val, w, h, rgb)
 
-#        if confidence < threshold or len(result) > max_count:
-#            break
+        if confidence < threshold or len(result) > max_count:
+            break
 
         # 求取识别位置: 目标中心 + 目标区域:
-#        middle_point, rectangle = _get_target_rectangle(max_loc, w, h)
-#        one_good_match = generate_result(middle_point, rectangle, confidence)
+        middle_point, rectangle = _get_target_rectangle(max_loc, w, h)
+        one_good_match = generate_result(middle_point, rectangle, confidence)
 
-#        result.append(one_good_match)
+        result.append(one_good_match)
 
         # 屏蔽已经取出的最优结果,进入下轮循环继续寻找:
         # cv2.floodFill(res, None, max_loc, (-1000,), max(max_val, 0), flags=cv2.FLOODFILL_FIXED_RANGE)
-#        cv2.rectangle(res, (int(max_loc[0] - w / 2), int(max_loc[1] - h / 2)), (int(max_loc[0] + w / 2), int(max_loc[1] + h / 2)), (0, 0, 0), -1)
+        cv2.rectangle(res, (int(max_loc[0] - w / 2), int(max_loc[1] - h / 2)), (int(max_loc[0] + w / 2), int(max_loc[1] + h / 2)), (0, 0, 0), -1)
 
-#    return result if result else None
+    return result if result else None
 
 
 def _get_confidence_from_matrix(im_source, im_search, max_loc, max_val, w, h, rgb):
