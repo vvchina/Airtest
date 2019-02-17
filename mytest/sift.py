@@ -4,6 +4,7 @@
 import cv2
 import numpy as np
 from cal_confidence import cal_rgb_confidence,cal_ccoeff_confidence
+from copy import deepcopy
 
 # SIFT识别特征点匹配，参数设置:
 FLANN_INDEX_KDTREE = 0
@@ -279,18 +280,27 @@ def _cal_sift_confidence(im_search, resize_img, rgb=False):
     confidence = (1 + confidence) / 2
     return confidence
 
-def _find_sift_in_predict_area(img_source, img_search,record_pos,resolution,threshold=0.8, rgb=True, good_ratio=FILTER_RATIO):
-        if not self.record_pos:
+def get_resolution(img):
+    h, w = img.shape[:2]
+    return w, h
+
+def find_sift_in_predict_area(img_source, img_search,record_pos,resolution,threshold=0.8, rgb=True, good_ratio=FILTER_RATIO):
+        if not record_pos:
             return None
         # calc predict area in screen
-        image_wh, screen_resolution = aircv.get_resolution(img_search), aircv.get_resolution(img_source)
+        image_wh, screen_resolution = get_resolution(img_search), get_resolution(img_source)
+        print(image_wh)
+        print(screen_resolution)
         xmin, ymin, xmax, ymax = Predictor.get_predict_area(record_pos, image_wh, resolution, screen_resolution)
+        screen_w,screen_h=screen_resolution
+        xmin,ymin,xmax,ymax=(int(round(xmin if xmin>0 else 0)),int(round(ymin if ymin>0 else 0)),int(round(xmax if xmax<screen_h else screen_h)),int(round(ymax if ymax<screen_h else screen_h)))
+        print((xmin,ymin,xmax,ymax))
         # crop predict image from screen
         predict_area = crop_image(img_source, (xmin, ymin, xmax, ymax))
         if not predict_area.any():
             return None
         # find sift in that image
-        ret_in_area = find_sift(predict_area, img_search, threshold=self.threshold, rgb=self.rgb)
+        ret_in_area = find_sift(predict_area, img_search, threshold=threshold, rgb=rgb)
         # calc cv ret if found
         if not ret_in_area:
             return None
@@ -363,6 +373,7 @@ class Predictor(object):
     def get_predict_area(cls, record_pos, image_wh, image_resolution=(), screen_resolution=()):
         """Get predicted area in screen."""
         x, y = cls.get_predict_point(record_pos, screen_resolution)
+        print((x,y))
         # The prediction area should depend on the image size:
         if image_resolution:
             predict_x_radius = int(image_wh[0] * screen_resolution[0] / (2 * image_resolution[0])) + cls.DEVIATION
