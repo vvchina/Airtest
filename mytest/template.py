@@ -11,6 +11,36 @@
 import cv2
 from utils import generate_result, check_source_larger_than_search, img_mat_rgb_2_gray
 from cal_confidence import cal_rgb_confidence
+from predict import Predictor
+from copy import deepcopy
+from utils import crop_image, generate_result, get_resolution
+
+def find_template_in_predict_area(img_source, img_search, record_pos,resolution, threshold=0.8, rgb=False):
+        if not record_pos:
+            return None
+        # calc predict area in screen
+        image_wh, screen_resolution = get_resolution(img_search), get_resolution(img_source)
+        print(image_wh)
+        print(screen_resolution)
+        xmin, ymin, xmax, ymax = Predictor.get_predict_area(record_pos, image_wh, resolution, screen_resolution)
+        screen_w,screen_h=screen_resolution
+        xmin,ymin,xmax,ymax=(int(round(xmin if xmin>0 else 0)),int(round(ymin if ymin>0 else 0)),int(round(xmax if xmax<screen_h else screen_h)),int(round(ymax if ymax<screen_h else screen_h)))
+        print((xmin,ymin,xmax,ymax))
+        # crop predict image from screen
+        predict_area = crop_image(img_source, (xmin, ymin, xmax, ymax))
+        if not predict_area.any():
+            return None
+        # find sift in that image
+        ret_in_area = find_template(predict_area, img_search, threshold=threshold, rgb=rgb)
+        # calc cv ret if found
+        if not ret_in_area:
+            return None
+        ret = deepcopy(ret_in_area)
+        if "rectangle" in ret:
+            for idx, item in enumerate(ret["rectangle"]):
+                ret["rectangle"][idx] = (item[0] + xmin, item[1] + ymin)
+        ret["result"] = (ret_in_area["result"][0] + xmin, ret_in_area["result"][1] + ymin)
+        return ret
 
 
 def find_template(im_source, im_search, threshold=0.8, rgb=False):
@@ -95,6 +125,6 @@ def _get_target_rectangle(left_top_pos, w, h):
     # 点击位置:
     middle_point = (x_middle, y_middle)
     # 识别目标区域: 点序:左上->左下->右下->右上, 左上(min,min)右下(max,max)
-    rectangle = (left_top_pos, left_bottom_pos, right_bottom_pos, right_top_pos)
+    rectangle = [left_top_pos, left_bottom_pos, right_bottom_pos, right_top_pos]
 
     return middle_point, rectangle

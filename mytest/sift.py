@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 from cal_confidence import cal_rgb_confidence,cal_ccoeff_confidence
 from copy import deepcopy
+from predict import Predictor
+from utils import crop_image, generate_result, get_resolution
 
 # SIFT识别特征点匹配，参数设置:
 FLANN_INDEX_KDTREE = 0
@@ -280,9 +282,6 @@ def _cal_sift_confidence(im_search, resize_img, rgb=False):
     confidence = (1 + confidence) / 2
     return confidence
 
-def get_resolution(img):
-    h, w = img.shape[:2]
-    return w, h
 
 def find_sift_in_predict_area(img_source, img_search,record_pos,resolution,threshold=0.8, rgb=True, good_ratio=FILTER_RATIO):
         if not record_pos:
@@ -307,78 +306,9 @@ def find_sift_in_predict_area(img_source, img_search,record_pos,resolution,thres
         ret = deepcopy(ret_in_area)
         if "rectangle" in ret:
             for idx, item in enumerate(ret["rectangle"]):
+                print(ret["rectangle"][idx])
                 ret["rectangle"][idx] = (item[0] + xmin, item[1] + ymin)
         ret["result"] = (ret_in_area["result"][0] + xmin, ret_in_area["result"][1] + ymin)
         return ret
 
-def crop_image(img, rect):
-    """
-        区域截图，同时返回截取结果 和 截取偏移;
-        Crop image , rect = [x_min, y_min, x_max ,y_max].
-        (airtest中有用到)
-    """
 
-    if isinstance(rect, (list, tuple)):
-        height, width = img.shape[:2]
-        # 获取在图像中的实际有效区域：
-        x_min, y_min, x_max, y_max = [int(i) for i in rect]
-        x_min, y_min = max(0, x_min), max(0, y_min)
-        x_min, y_min = min(width - 1, x_min), min(height - 1, y_min)
-        x_max, y_max = max(0, x_max), max(0, y_max)
-        x_max, y_max = min(width - 1, x_max), min(height - 1, y_max)
-
-        # 返回剪切的有效图像+左上角的偏移坐标：
-        img_crop = img[y_min:y_max, x_min:x_max]
-        return img_crop
-    else:
-        raise Exception("to crop a image, rect should be a list like: [x_min, y_min, x_max, y_max].")
-
-
-def generate_result(middle_point, pypts, confi):
-    """Format the result: 定义图像识别结果格式."""
-    ret = dict(result=middle_point,
-               rectangle=pypts,
-               confidence=confi)
-    return ret
-
-
-class Predictor(object):
-    """
-    this class predicts the press_point and the area to search im_search.
-    """
-
-    DEVIATION = 100
-
-    @staticmethod
-    def count_record_pos(pos, resolution):
-        """计算坐标对应的中点偏移值相对于分辨率的百分比."""
-        _w, _h = resolution
-        # 都按宽度缩放，针对G18的实验结论
-        delta_x = (pos[0] - _w * 0.5) / _w
-        delta_y = (pos[1] - _h * 0.5) / _w
-        delta_x = round(delta_x, 3)
-        delta_y = round(delta_y, 3)
-        return delta_x, delta_y
-
-    @classmethod
-    def get_predict_point(cls, record_pos, screen_resolution):
-        """预测缩放后的点击位置点."""
-        delta_x, delta_y = record_pos
-        _w, _h = screen_resolution
-        target_x = delta_x * _w + _w * 0.5
-        target_y = delta_y * _w + _h * 0.5
-        return target_x, target_y
-
-    @classmethod
-    def get_predict_area(cls, record_pos, image_wh, image_resolution=(), screen_resolution=()):
-        """Get predicted area in screen."""
-        x, y = cls.get_predict_point(record_pos, screen_resolution)
-        print((x,y))
-        # The prediction area should depend on the image size:
-        if image_resolution:
-            predict_x_radius = int(image_wh[0] * screen_resolution[0] / (2 * image_resolution[0])) + cls.DEVIATION
-            predict_y_radius = int(image_wh[1] * screen_resolution[1] / (2 * image_resolution[1])) + cls.DEVIATION
-        else:
-            predict_x_radius, predict_y_radius = int(image_wh[0] / 2) + cls.DEVIATION, int(image_wh[1] / 2) + cls.DEVIATION
-        area = (x - predict_x_radius, y - predict_y_radius, x + predict_x_radius, y + predict_y_radius)
-        return area

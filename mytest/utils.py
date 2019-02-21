@@ -67,3 +67,29 @@ def cv2_2_pil(cv2_image):
     cv2_im = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
     pil_im = Image.fromarray(cv2_im)
     return pil_im
+
+def crop_image(img, rect):
+    """
+        区域截图，同时返回截取结果 和 截取偏移;
+        Crop image , rect = [x_min, y_min, x_max ,y_max].
+        (airtest中有用到)
+    """
+
+    if isinstance(rect, (list, tuple)):
+        height, width = img.shape[:2]
+        # 获取在图像中的实际有效区域：
+        x_min, y_min, x_max, y_max = [int(i) for i in rect]
+        x_min, y_min = max(0, x_min), max(0, y_min)
+        x_min, y_min = min(width - 1, x_min), min(height - 1, y_min)
+        x_max, y_max = max(0, x_max), max(0, y_max)
+        x_max, y_max = min(width - 1, x_max), min(height - 1, y_max)
+
+        # 返回剪切的有效图像+左上角的偏移坐标：
+        img_crop = img[y_min:y_max, x_min:x_max]
+        return img_crop
+    else:
+        raise Exception("to crop a image, rect should be a list like: [x_min, y_min, x_max, y_max].")
+
+def get_resolution(img):
+    h, w = img.shape[:2]
+    return w, h
